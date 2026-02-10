@@ -1,144 +1,120 @@
- Jaguar Re-Identification — Kaggle 
+Jaguar Re-Identification with Deep Metric Learning
 
-A high-performance deep metric learning pipeline for Jaguar Re-Identification, designed with competition-grade best practices: modern CNN backbones, margin-based losses, strong augmentation, test-time ensembling, and extensive embedding analysis.
+This repository implements an end-to-end Jaguar Re-Identification (ReID) system using deep metric learning, ConvNeXt, and ArcFace loss.
+The pipeline is designed for high-accuracy wildlife re-identification, enabling robust matching between query and gallery images under varying poses, lighting, and backgrounds.
 
-This solution focuses on robust identity matching across large appearance variations caused by pose, illumination, occlusion, and background noise — a core challenge in wildlife ReID.
+🚀 Key Features
 
-🧠 Problem Overview
+✅ ConvNeXt backbone (ImageNet pretrained via timm)
 
-Given a query image and a gallery image, predict a similarity score ∈ [0, 1] indicating whether both images belong to the same jaguar individual.
+✅ ArcFace loss for discriminative embedding learning
 
-This is formulated as a metric learning problem, not a traditional classification task.
+✅ GeM pooling for stronger spatial feature aggregation
 
-🏗️ Solution Overview
+✅ Test-Time Augmentation (TTA) with horizontal flips
 
-Key idea:
-Learn a highly discriminative embedding space where images of the same jaguar cluster tightly, while different individuals are well separated.
+✅ Cosine similarity–based retrieval
 
-Core Design Choices
+✅ Interactive & static visualizations (PCA, t-SNE, heatmaps)
 
-ConvNeXt-Small → strong modern CNN inductive bias
+✅ Submission-ready Kaggle pipeline
 
-GeM pooling → superior global feature aggregation
-
-ArcFace margin loss → explicit inter-class separation
-
-Cosine similarity retrieval → stable metric at inference
-
-Test-Time Augmentation (TTA) → reduced variance
-
-Embedding normalization → improved similarity calibration
-
-🧬 Model Architecture
-Input Image (224 × 224)
+🧠 Model Architecture
+Input Image (224×224)
         ↓
-ConvNeXt-Small (ImageNet pretrained)
+ConvNeXt-Small Backbone
         ↓
 GeM Pooling
         ↓
 BatchNorm Embedding Head
         ↓
-768-D Feature Embedding
+ArcFace Margin Classifier (Training Only)
         ↓
-ArcFace Margin Classifier (Training only)
+L2-Normalized Embeddings (Inference)
 
+📂 Project Structure
+├── train.csv
+├── test.csv
+├── train/
+│   └── train/          # Training images
+├── test/
+│   └── test/           # Test images
+├── jaguar_best_model.pth
+├── submission.csv
+├── train.py / notebook.ipynb
+└── README.md
 
-During inference, only normalized embeddings are used — no classifier head.
-
-⚙️ Training Configuration
-Component	Setting
-Backbone	ConvNeXt-Small
+⚙️ Configuration Highlights
+Parameter	Value
+Backbone	convnext_small.fb_in1k
 Image Size	224 × 224
 Embedding Dim	768
 Loss	ArcFace
-Margin (m)	0.5
-Scale (s)	30
 Optimizer	AdamW
-Scheduler	Cosine Annealing
-Epochs	8
+Scheduler	CosineAnnealingLR
 Batch Size	32
+Epochs	8
 Mixed Precision	✅
-🔁 Data Augmentation Strategy
+🧪 Training Strategy
 
-Carefully chosen to simulate real-world wildlife variations:
+Strong data augmentation
 
-Random horizontal flip
+Random affine
 
-Color jitter (brightness / contrast)
+Color jitter
 
-Random affine transformations
+Horizontal flip
 
-Scale & translation jitter
+Random erasing
 
-Random erasing (occlusion robustness)
+Metric learning objective
 
-These augmentations significantly improve generalization without damaging identity cues.
+ArcFace margin (m=0.5, s=30)
 
-🚀 Inference Pipeline
+Mixed-precision training
 
-Extract embeddings for all query & gallery images
+Faster convergence
 
-Apply TTA (horizontal flip averaging)
+Lower GPU memory usage
+
+🔍 Inference & Similarity Scoring
+
+Extract embeddings for query + gallery images
+
+Apply TTA averaging
 
 L2-normalize embeddings
 
 Compute cosine similarity matrix
 
-Generate final submission file
+Generate submission with similarity scores clipped to [0, 1]
 
-Similarity scores are clipped to [0, 1] for numerical stability.
+📊 Visualizations Included
+Static
 
-📊 Deep Analysis & Visual Validation
+📈 Training loss curve
 
-To ensure embeddings are semantically meaningful, the solution includes extensive post-training analysis:
+📉 Similarity score distribution
 
-Static Analysis
+🧭 PCA & t-SNE embedding projections
 
-Training loss convergence
+🔥 Cosine similarity & distance heatmaps
 
-Similarity score distributions
+🖼️ Top similar image pairs
 
-PCA projection of embeddings
+Interactive (Plotly)
 
-t-SNE cluster visualization
+🧠 Interactive PCA / t-SNE scatter plots
 
-Cosine similarity & distance heatmaps
+🧩 Hover-enabled similarity heatmaps
 
-Top-K nearest neighbor inspection
-
-Interactive Analysis
-
-🧠 Interactive PCA / t-SNE (Plotly)
-
-🔥 Hover-enabled similarity heatmaps
-
-🖱️ Image-level embedding exploration
-
-These tools are invaluable for debugging ReID failures and validating embedding quality.
-
-📈 Why This Works Well on Kaggle
-
-✔ Metric-learning-first design
-✔ Modern backbone + margin loss
-✔ Strong regularization without overfitting
-✔ TTA improves leaderboard stability
-✔ Extensive embedding sanity checks
-
-This approach follows patterns used in top Kaggle ReID, face recognition, and product matching solutions.
-
-📂 Repository Structure
-├── train.csv
-├── test.csv
-├── train/
-│   └── train/
-├── test/
-│   └── test/
-├── jaguar_best_model.pth
-├── submission.csv
-├── notebook.ipynb
-└── README.md
+🖱️ Image-level exploration
 
 🛠️ Tech Stack
+
+Languages
+
+Python
 
 Deep Learning
 
@@ -146,40 +122,45 @@ PyTorch
 
 TIMM
 
-Torch AMP
+Torch AMP (mixed precision)
 
-Data & ML
+Data & Visualization
 
 NumPy, Pandas
-
-scikit-learn
-
-Visualization
 
 Matplotlib, Seaborn
 
 Plotly
 
-🧪 Reproducibility
+ML Utilities
 
-Fixed random seeds
+scikit-learn
 
-Deterministic CUDA settings
+PIL, torchvision
 
-Explicit config class
+📈 Results & Observations
 
-Single-file execution flow
+ArcFace significantly improves inter-class separation
 
-🔮 Potential Gold-Tier Extensions
+GeM pooling outperforms standard average pooling
 
-If pushing further on leaderboard:
+TTA improves retrieval stability
+
+Embeddings show clear clustering in PCA/t-SNE space
+
+🏁 How to Run
+pip install timm torch torchvision plotly seaborn scikit-learn
+python train.py
+
+
+Or run directly in Kaggle Notebook (GPU recommended).
+
+📌 Future Improvements
 
 🔄 k-reciprocal re-ranking
 
-🧠 Backbone ensembling
+🧬 Hard sample mining
 
-🧬 Hard-example mining
+🧠 Larger backbones (ConvNeXt-B, ViT)
 
-📐 Adaptive margin scheduling
-
-🔁 Cross-fold embedding averaging
+📏 Cross-validation with fold ensembling
